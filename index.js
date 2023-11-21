@@ -1,119 +1,85 @@
-document.addEventListener('DOMContentLoaded', function () {
-            // Load saved data from web storage
-            loadSavedData();
+//CLEAR THE DATA IN TABLE
+const dobInput = document.getElementById("dob");
+dobInput.addEventListener("input", () => validate(dobInput.value));
 
-            // Add event listener for form submission
-            document.getElementById('registrationForm').addEventListener('submit', function (event) {
-                event.preventDefault();
-                validateAndSubmitForm();
-            });
+function validate(dobValue) {
+    const today = new Date();
+    const dobDate = new Date(dobValue);
 
-            // Additional validations for the date input field
-            var dobInput = document.getElementById('dob');
-            dobInput.addEventListener('change', function () {
-                validateDateOfBirth();
-            });
-        });
+    const age = today.getFullYear() - dobDate.getFullYear();
 
-        function validateAndSubmitForm() {
-            // Perform additional validations here
-            if (validateDateOfBirth()) {
-                // If all validations pass, submit the form
-                submitForm();
-            } else {
-                alert('Invalid Date of Birth. Age must be between 18 and 55.');
-            }
-        }
+    if (age < 18 || age > 55) {
+        dobInput.setCustomValidity("You must be between 18 and 55 years old to register.");
+        dobInput.reportValidity();
+    } else {
+        dobInput.setCustomValidity("");
+    }
+}
 
-        function validateDateOfBirth() {
-            // Get the selected date from the input
-            var dobValue = document.getElementById('dob').value;
+let userForm = document.getElementById('user-form');
 
-            // Calculate age based on the selected date
-            var today = new Date();
-            var birthDate = new Date(dobValue);
-            var age = today.getFullYear() - birthDate.getFullYear();
+const retrieveEntries = () => {
+    let entries = localStorage.getItem('userEntries');
+    if (entries) {
+        entries = JSON.parse(entries);
+    } else {
+        entries = [];
+    }
+    return entries;
+};
 
-            // Check if the age is between 18 and 55
-            return age >= 18 && age <= 55;
-        }
+const displayEntries = () => {
+    const entries = retrieveEntries();
 
-        function submitForm() {
-            // Get form data
-            var name = document.getElementById('name').value;
-            var email = document.getElementById('email').value;
-            var password = document.getElementById('password').value;
-            var dob = document.getElementById('dob').value;
-            var acceptedTerms = document.getElementById('terms').checked;
+    const tableEntries = entries.map((entry) => {
+        const nameCell = `<td class='border px-4 py-2'>${entry.name}</td>`;
+        const emailCell = `<td class='border px-4 py-2'>${entry.email}</td>`;
+        const passwordCell = `<td class='border px-4 py-2'>${entry.password}</td>`;
+        const dobCell = `<td class='border px-4 py-2'>${entry.dob}</td>`;
+        // const t_cCell = `<td class='border px-4 py-2'>${entry.t_c ? 'True' : 'False'}</td>`;
+        const t_cCell = `<td class='border px-4 py-2'>${entry.t_c}</td>`;
 
-            // Create a new row for the table
-            var newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${name}</td>
-                <td>${email}</td>
-                <td>${password}</td>
-                <td>${dob}</td>
-                <td>${acceptedTerms ? 'Yes' : 'No'}</td>
-            `;
+        const row = `<tr>${nameCell} ${emailCell} ${passwordCell} ${dobCell} ${t_cCell}</tr>`;
+        return row;
+    }).join("\n");
 
-            // Append the new row to the table
-            document.getElementById('dataTable').getElementsByTagName('tbody')[0].appendChild(newRow);
+    const table = `<table class="table-auto w-full borde border-collapse border-gray-300"">
+        <tr>
+            <th class="px-4 py-2 border">Name</th>
+            <th class="px-4 py-2 border">Email</th>
+            <th class="px-4 py-2 border">Password</th>
+            <th class="px-4 py-2 border">Dob</th>
+            <th class="px-4 py-2 border">Accepted Terms?</th>
+        </tr>
+        ${tableEntries}
+    </table>`;
 
-            // Save data to web storage
-            saveDataToStorage();
+    let details = document.getElementById('user-entries');
+    details.innerHTML = table;
+};
 
-            // Clear the form
-            document.getElementById('registrationForm').reset();
-        }
+const saveUserForm = (event) => {
+    event.preventDefault();
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const dob = document.getElementById('dob').value;
+    const t_c = document.getElementById('t&c').checked;
+    
+    const entry = {
+        name: name,
+        email: email,
+        password: password,
+        dob: dob,
+        t_c: t_c
+    };
+    userEntries = retrieveEntries();
 
-        function saveDataToStorage() {
-            // Get existing data from web storage
-            var existingData = loadDataFromStorage();
+    userEntries.push(entry); // Add entry to userEntries array
 
-            // Get form data
-            var name = document.getElementById('name').value;
-            var email = document.getElementById('email').value;
-            var password = document.getElementById('password').value;
-            var dob = document.getElementById('dob').value;
-            var acceptedTerms = document.getElementById('terms').checked;
+    localStorage.setItem('userEntries', JSON.stringify(userEntries));
+    displayEntries();
+};
 
-            // Add new entry to existing data
-            existingData.push({
-                name: name,
-                email: email,
-                password: password,
-                dob: dob,
-                acceptedTerms: acceptedTerms
-            });
-
-            // Convert data to JSON string and save to web storage
-            localStorage.setItem('userData', JSON.stringify(existingData));
-        }
-
-        function loadDataFromStorage() {
-            // Load existing data from web storage
-            var existingData = localStorage.getItem('userData');
-
-            // Parse the JSON string to an object or initialize an empty array
-            return existingData ? JSON.parse(existingData) : [];
-        }
-
-        function loadSavedData() {
-            // Load data from web storage
-            var existingData = loadDataFromStorage();
-
-            // Display the existing data in the table
-            var tableBody = document.getElementById('dataTable').getElementsByTagName('tbody')[0];
-
-            existingData.forEach(function (entry) {
-                var newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${entry.name}</td>
-                    <td>${entry.email}</td>
-                    <td>${entry.password}</td>
-                    <td>${entry.dob}</td>
-                    <td>${entry.acceptedTerms ? 'Yes' : 'No'}</td>
-                `;
-                tableBody.appendChild(newRow);
-            });
-        }
+userForm.addEventListener('submit', saveUserForm);
+displayEntries();
